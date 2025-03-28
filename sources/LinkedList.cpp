@@ -46,7 +46,8 @@ namespace {
     bool gDeleteNotFound = false;
     float gDeleteStatusTimer = 0.0f;
     const float gDeleteStatusDuration = 1.0f;
-    bool showInsertMenu = false;
+    bool showInitializeMenu = false;
+    bool showManualInputDialog = false;
     bool showSearchDialog = false;
     bool showDeleteDialog = false;
     std::string manualInputText = "";
@@ -56,14 +57,14 @@ namespace {
     std::string deleteInputText = "";
     bool deleteInputActive = false;
     bool showAddDestinationDialog = false;
-    bool showAddValueDialog = false;
+    bool showAddDialog = false;
     std::string addDestinationText = "";
     std::string addValueText = "";
     bool addDestinationActive = false;
     bool addValueActive = false;
     int addDestinationValue = -1;
     bool showUpdateDestinationDialog = false;
-    bool showUpdateNewValueDialog = false;
+    bool showUpdateDialog = false;
     std::string updateDestinationText = "";
     std::string updateNewValueText = "";
     bool updateDestinationActive = false;
@@ -481,41 +482,48 @@ void LinkedList::UpdateNode(int dest, int newVal) {
         });
 }
 // Scene lifecycle
+
 void LinkedList::init() {
     buttons.clear();
+    // Restore dropdown/dialog flags to default
+    showInitializeMenu = false;
+    showSearchDialog = false;
+    showDeleteDialog = false;
+    manualInputText = "";
+    manualInputActive = false;
+    searchInputText = "";
+    searchInputActive = false;
+    deleteInputText = "";
+    deleteInputActive = false;
+    showAddDialog = false;
+    addDestinationText = "";
+    addDestinationActive = false;
+    addValueText = "";
+    addValueActive = false;
+    showUpdateDialog = false;
+    updateDestinationText = "";
+    updateDestinationActive = false;
+    updateNewValueText = "";
+    updateNewValueActive = false;
+
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    int outerMargin = 10, buttonHeight = 40, spacing = 5, numButtons = 6;
     int panelWidth = screenWidth / 3;
-    int margin = 10;
-    int panelX = margin;
-    int panelY = screenHeight / 2 + margin;
-    int panelAvailableHeight = screenHeight / 2 - 2 * margin;
-    int buttonHeight = (panelAvailableHeight - 5 * margin) / 6;
-    int buttonWidth = panelWidth - 2 * margin;
-    auto initBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)panelY, (float)buttonWidth, (float)buttonHeight },
-        "Initialize", baseFontSize, [this]() { ClearList(); MakeRandomList(); },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    auto addBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)(panelY + (buttonHeight + margin) * 1), (float)buttonWidth, (float)buttonHeight },
-        "Add", baseFontSize, [this]() { showAddDestinationDialog = true; },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    auto updateBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)(panelY + (buttonHeight + margin) * 2), (float)buttonWidth, (float)buttonHeight },
-        "Update", baseFontSize, [this]() { showUpdateDestinationDialog = true; },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    auto searchBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)(panelY + (buttonHeight + margin) * 3), (float)buttonWidth, (float)buttonHeight },
-        "Search", baseFontSize, [this]() { showSearchDialog = true; },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    auto deleteBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)(panelY + (buttonHeight + margin) * 4), (float)buttonWidth, (float)buttonHeight },
-        "Delete", baseFontSize, [this]() { showDeleteDialog = true; },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    auto clearBtn = make_unique<ActionButton>(Rectangle{ (float)panelX, (float)(panelY + (buttonHeight + margin) * 5), (float)buttonWidth, (float)buttonHeight },
-        "Clear List", baseFontSize, [this]() { ClearList(); },
-        RAYWHITE, SKYBLUE, BLUE, BLACK);
-    buttons.push_back(move(initBtn));
-    buttons.push_back(move(addBtn));
-    buttons.push_back(move(updateBtn));
-    buttons.push_back(move(searchBtn));
-    buttons.push_back(move(deleteBtn));
-    buttons.push_back(move(clearBtn));
+    int controlPanelHeight = numButtons * buttonHeight + (numButtons - 1) * spacing + 2 * outerMargin;
+    int panelX = outerMargin, panelY = screenHeight - controlPanelHeight - outerMargin;
+    Rectangle initBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    Rectangle addBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin + (buttonHeight + spacing) * 1), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    Rectangle updateBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin + (buttonHeight + spacing) * 2), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    Rectangle searchBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin + (buttonHeight + spacing) * 3), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    Rectangle deleteBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin + (buttonHeight + spacing) * 4), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    Rectangle clearBtnRect = { (float)(panelX + outerMargin), (float)(panelY + outerMargin + (buttonHeight + spacing) * 5), (float)(panelWidth - 2 * outerMargin), (float)buttonHeight };
+    buttons.push_back(DrawButton(initBtnRect, "Initialize", [this]() { showInitializeMenu = !showInitializeMenu; }, baseFontSize));
+    buttons.push_back(DrawButton(addBtnRect, "Add", [this]() { showAddDialog = !showAddDialog; }, baseFontSize));
+    buttons.push_back(DrawButton(updateBtnRect, "Update", [this]() { showUpdateDialog = !showUpdateDialog; }, baseFontSize));
+    buttons.push_back(DrawButton(searchBtnRect, "Search", [this]() { showSearchDialog = !showSearchDialog; }, baseFontSize));
+    buttons.push_back(DrawButton(deleteBtnRect, "Delete", [this]() { showDeleteDialog = !showDeleteDialog; }, baseFontSize));
+    buttons.push_back(DrawButton(clearBtnRect, "Clear List", [this]() { ClearList(); }, baseFontSize));
     addComponent<ReturnButtonComponent>(Scene::MENU, baseFontSize)->init();
     camera = addComponent<Camera2DComponent>();
     camera->init();
@@ -534,23 +542,22 @@ void LinkedList::update() {
     if (gPendingInsertion && !gAnimList.isPlaying() && !gInsertionDone) {
         Node* newNode = new Node{ gPendingInsertValue, nullptr };
         if (head == nullptr) { head = newNode; newNode->next = head; }
-        else { Node* last = head; while (last->next != head) last = last->next; last->next = newNode; newNode->next = head; }
+        else { newNode->next = head->next; head->next = newNode; }
         gInsertionDone = true;
         gPendingInsertion = false;
-        gIsAnimating = false;
         gCurrentPositions.clear();
     }
     if (!gAnimList.isPlaying() && !pendingOps.empty()) { auto op = pendingOps.front(); pendingOps.pop(); op(); }
     if (gSearchActive) {
         float dt = GetFrameTime();
         int count = 0;
-        if (head != nullptr) { Node* temp = head; do { count++; temp = temp->next; } while (temp != head); }
+        if (head) { Node* temp = head; do { count++; temp = temp->next; } while (temp != head); }
         if (count > 0) {
             if (gSearchIndex < count) {
                 gSearchTimer += dt;
                 if (gSearchTimer >= gSearchThreshold) {
                     Node* cur = head;
-                    for (int j = 0; j < gSearchIndex; j++) cur = cur->next;
+                    for (int j = 0; j < gSearchIndex; j++) { cur = cur->next; }
                     if (cur->data == gSearchValue) { gSearchFound = true; }
                     else { gSearchIndex++; gSearchTimer = 0.0f; }
                 }
@@ -563,90 +570,169 @@ void LinkedList::update() {
     if (gDeleteActive) {
         float dt = GetFrameTime();
         int count = 0;
-        if (head != nullptr) { Node* temp = head; do { count++; temp = temp->next; } while (temp != head); }
-        if (count > 0) {
+        if (head) { Node* temp = head; do { count++; temp = temp->next; } while (temp != head); }
+        if (!gDeleteFound && !gDeleteNotFound) {
             if (gDeleteIndex < count) {
                 gDeleteTimer += dt;
                 if (gDeleteTimer >= gDeleteThreshold) {
                     Node* cur = head;
-                    for (int j = 0; j < gDeleteIndex; j++) cur = cur->next;
+                    for (int j = 0; j < gDeleteIndex; j++) { cur = cur->next; }
                     if (cur->data == gDeleteValue) {
-                        if (head->next == head) { delete head; head = nullptr; }
-                        else {
-                            if (cur == head) { Node* last = head; while (last->next != head) last = last->next; head = head->next; last->next = head; delete cur; }
-                            else { Node* prev = head; for (int j = 0; j < gDeleteIndex - 1; j++) prev = prev->next; prev->next = cur->next; delete cur; }
-                        }
+                        if (head->next == head && head->data == gDeleteValue) { delete head; head = nullptr; }
+                        else if (cur == head) { Node* last = head; while (last->next != head) { last = last->next; } head = head->next; last->next = head; delete cur; }
+                        else { Node* prev = head; while (prev->next != cur) { prev = prev->next; } prev->next = cur->next; delete cur; }
                         gDeleteFound = true;
                     }
                     else { gDeleteIndex++; gDeleteTimer = 0.0f; }
                 }
             }
             else { gDeleteNotFound = true; }
+        }
+        else {
             gDeleteStatusTimer += dt;
             if (gDeleteStatusTimer >= gDeleteStatusDuration) { gDeleteActive = false; gDeleteStatusTimer = 0.0f; }
         }
     }
-    int panelY = GetScreenHeight() / 2 + 10;
-    int dialogY = panelY - 40;
-    Rectangle dialogRect = { 10, (float)dialogY, 150, 30 };
-    if (showAddDestinationDialog) {
-        int val = GetValDialogBox("Destination:", addDestinationText, addDestinationActive, dialogRect);
-        if (val != -1) { addDestinationValue = val; showAddDestinationDialog = false; showAddValueDialog = true; }
+    if (showAddDialog) {
+        static bool addDestDone = false;
+        static int addDestVal = -1;
+        if (!addDestDone) {
+            Rectangle addDestRect = { buttons[1]->getBounds().x + buttons[1]->getBounds().width + 5, buttons[1]->getBounds().y, 150, 40 };
+            int destVal = GetValDialogBox("Dest:", addDestinationText, addDestinationActive, addDestRect);
+            if (destVal != -1) { addDestVal = destVal; addDestDone = true; }
+            DrawRectangleLinesEx(addDestRect, 2, BLACK);
+        }
+        else {
+            Rectangle addNewRect = { buttons[1]->getBounds().x + buttons[1]->getBounds().width + 5, buttons[1]->getBounds().y + 45, 150, 40 };
+            int newVal = GetValDialogBox("New Value:", addValueText, addValueActive, addNewRect);
+            if (newVal != -1) { AddNode(addDestVal, newVal); showAddDialog = false; addDestDone = false; }
+            DrawRectangleLinesEx(addNewRect, 2, BLACK);
+        }
     }
-    if (showAddValueDialog) {
-        int val = GetValDialogBox("New Value:", addValueText, addValueActive, dialogRect);
-        if (val != -1) { AddNode(addDestinationValue, val); showAddValueDialog = false; }
-    }
-    if (showUpdateDestinationDialog) {
-        int val = GetValDialogBox("Update Target:", updateDestinationText, updateDestinationActive, dialogRect);
-        if (val != -1) { updateDestinationValue = val; showUpdateDestinationDialog = false; showUpdateNewValueDialog = true; }
-    }
-    if (showUpdateNewValueDialog) {
-        int val = GetValDialogBox("New Value:", updateNewValueText, updateNewValueActive, dialogRect);
-        if (val != -1) { UpdateNode(updateDestinationValue, val); showUpdateNewValueDialog = false; }
+    if (showUpdateDialog) {
+        static bool updateDestDone = false;
+        static int updateDestVal = -1;
+        if (!updateDestDone) {
+            Rectangle updateDestRect = { buttons[2]->getBounds().x + buttons[2]->getBounds().width + 5, buttons[2]->getBounds().y, 150, 40 };
+            int destVal = GetValDialogBox("Target:", updateDestinationText, updateDestinationActive, updateDestRect);
+            if (destVal != -1) { updateDestVal = destVal; updateDestDone = true; }
+            DrawRectangleLinesEx(updateDestRect, 2, BLACK);
+        }
+        else {
+            Rectangle updateNewRect = { buttons[2]->getBounds().x + buttons[2]->getBounds().width + 5, buttons[2]->getBounds().y + 45, 150, 40 };
+            int newVal = GetValDialogBox("New Value:", updateNewValueText, updateNewValueActive, updateNewRect);
+            if (newVal != -1) { UpdateNode(updateDestVal, newVal); showUpdateDialog = false; updateDestDone = false; }
+            DrawRectangleLinesEx(updateNewRect, 2, BLACK);
+        }
     }
     if (showSearchDialog) {
-        int val = GetValDialogBox("Search:", searchInputText, searchInputActive, dialogRect);
-        if (val != -1) { SearchNodeValue(val); showSearchDialog = false; }
+        Rectangle searchDialogRect = { buttons[3]->getBounds().x + buttons[3]->getBounds().width + 5, buttons[3]->getBounds().y, 150, 40 };
+        int searchVal = GetValDialogBox("Search value:", searchInputText, searchInputActive, searchDialogRect);
+        if (searchVal != -1) { SearchNodeValue(searchVal); showSearchDialog = false; }
+        DrawRectangleLinesEx(searchDialogRect, 2, BLACK);
     }
     if (showDeleteDialog) {
-        int val = GetValDialogBox("Delete:", deleteInputText, deleteInputActive, dialogRect);
-        if (val != -1) { DeleteNode(val); showDeleteDialog = false; }
+        Rectangle deleteDialogRect = { buttons[4]->getBounds().x + buttons[4]->getBounds().width + 5, buttons[4]->getBounds().y, 150, 40 };
+        int delVal = GetValDialogBox("Delete value:", deleteInputText, deleteInputActive, deleteDialogRect);
+        if (delVal != -1) { DeleteNode(delVal); showDeleteDialog = false; }
+        DrawRectangleLinesEx(deleteDialogRect, 2, BLACK);
     }
 }
+
 void LinkedList::draw() {
     ClearBackground(RAYWHITE);
-    float centerX = GetScreenWidth() / 2.0f;
-    float centerY = GetScreenHeight() / 2.0f;
-    float radius = 200.0f;
-    vector<Vector2> positions;
-    int count = 0;
-    if (head != nullptr) {
+    int screenWidth = 600, screenHeight = 800, outerMargin = 10, buttonHeight = 40, spacing = 5, numButtons = 6;
+    int panelWidth = screenWidth / 3;
+    int controlPanelHeight = numButtons * buttonHeight + (numButtons - 1) * spacing + 2 * outerMargin;
+    int panelX = outerMargin, panelY = screenHeight - controlPanelHeight - outerMargin;
+    Rectangle initButtonRect = buttons[0]->getBounds();
+    Rectangle addButtonRect = buttons[1]->getBounds();
+    Rectangle updateButtonRect = buttons[2]->getBounds();
+    Rectangle searchButtonRect = buttons[3]->getBounds();
+    Rectangle deleteButtonRect = buttons[4]->getBounds();
+    Rectangle clearButtonRect = buttons[5]->getBounds();
+    float centerX = screenWidth * 0.33f, centerY = screenHeight * 0.33f, radius = 260.0f;
+    std::vector<Vector2> positions;
+    if (head) {
+        int totalNodes = 0;
         Node* temp = head;
-        do {
-            count++;
-            positions.push_back(GetPosCLLNode(count, positions.size(), centerX, centerY, radius));
-            temp = temp->next;
-        } while (temp != head);
+        do { totalNodes++; temp = temp->next; } while (temp != head);
+        for (int i = 0; i < totalNodes; i++) {
+            positions.push_back(GetPosCLLNode(totalNodes, i, centerX, centerY, radius));
+        }
     }
     if (gSearchActive) { DrawList(positions, gSearchIndex, head); }
     else if (gDeleteActive) { DrawList(positions, gDeleteIndex, head); }
-    else if (gIsAnimating && !gCurrentPositions.empty()) { DrawList(gCurrentPositions, -1, head); }
+    else if (gAnimList.isPlaying() && !gCurrentPositions.empty()) { DrawList(gCurrentPositions, -1, head); }
     else { DrawList(positions, -1, head); }
+    std::string statusMessage;
+    Color msgColor = BLACK;
     if (gSearchActive) {
-        if (gSearchFound) { DrawText("Node Found!", 10, GetScreenHeight() / 2 - 40, 20, GREEN); }
-        else if (gSearchNotFound) { DrawText("Node Not Found!", 10, GetScreenHeight() / 2 - 40, 20, RED); }
-        else { DrawText(TextFormat("Searching for %d...", gSearchValue), 10, GetScreenHeight() / 2 - 40, 20, BLACK); }
+        if (gSearchFound) { statusMessage = "Node Found!"; msgColor = GREEN; }
+        else if (gSearchNotFound) { statusMessage = "Node Not Found!"; msgColor = RED; }
+        else { statusMessage = "Searching for " + std::to_string(gSearchValue) + "..."; }
     }
-    if (gDeleteActive) {
-        if (gDeleteFound) { DrawText("Node Deleted!", 10, GetScreenHeight() / 2 - 40, 20, GREEN); }
-        else if (gDeleteNotFound) { DrawText("Node Not Found!", 10, GetScreenHeight() / 2 - 40, 20, RED); }
-        else { DrawText(TextFormat("Deleting %d...", gDeleteValue), 10, GetScreenHeight() / 2 - 40, 20, BLACK); }
+    else if (gDeleteActive) {
+        if (gDeleteFound) { statusMessage = "Node Deleted!"; msgColor = GREEN; }
+        else if (gDeleteNotFound) { statusMessage = "Node Not Found!"; msgColor = RED; }
+        else { statusMessage = "Deleting " + std::to_string(gDeleteValue) + "..."; }
     }
-    DrawText("Linked List Visualization", 10, 10, 20, BLACK);
+    else if (gAnimList.isPlaying()) { statusMessage = "Traversing List..."; msgColor = DARKGRAY; }
+    if (!statusMessage.empty()) {
+        int textWidth = MeasureText(statusMessage.c_str(), 20);
+        int boxWidth = textWidth + 20, boxHeight = 40;
+        float msgBoxX = initButtonRect.x, msgBoxY = initButtonRect.y - boxHeight - 5;
+        DrawRectangle(msgBoxX, msgBoxY, (float)boxWidth, (float)boxHeight, Fade(LIGHTGRAY, 0.8f));
+        DrawRectangleLines((int)msgBoxX, (int)msgBoxY, boxWidth, boxHeight, BLACK);
+        float textX = msgBoxX + (boxWidth - textWidth) / 2.0f, textY = msgBoxY + (boxHeight - 20) / 2.0f;
+        DrawText(statusMessage.c_str(), (int)textX, (int)textY, 20, msgColor);
+    }
+    int titleWidth = MeasureText("Linked List Visualization", 20);
+    DrawText("Linked List Visualization", (screenWidth - titleWidth) / 2, 10, 20, BLACK);
     for (auto& button : buttons) { button->draw(); }
+    if (showInitializeMenu) {
+        float subBtnWidth = 160, subBtnHeight = 30, subSpacing = 5;
+        float dropX = initButtonRect.x + initButtonRect.width + 5, dropY = initButtonRect.y;
+        Rectangle dropFrame = { dropX, dropY, subBtnWidth, 3 * subBtnHeight + 2 * subSpacing };
+        DrawRectangleRec(dropFrame, Fade(LIGHTGRAY, 0.8f));
+        DrawRectangleLinesEx(dropFrame, 2, BLACK);
+        Rectangle randRect = { dropX + 5, dropY + 5, subBtnWidth - 10, subBtnHeight };
+        auto randBtn = DrawButton(randRect, "Random", [this]() { MakeRandomList(); showInitializeMenu = false; }, baseFontSize);
+        randBtn->update();
+        randBtn->draw();
+        Rectangle fileRect = { dropX + 5, dropY + 5 + subBtnHeight + subSpacing, subBtnWidth - 10, subBtnHeight };
+        auto fileBtn = DrawButton(fileRect, "FromFile", [this]() { GetInputFromFile("input.txt"); showInitializeMenu = false; }, baseFontSize);
+        fileBtn->update();
+        fileBtn->draw();
+        Rectangle manualRect = { dropX + 5, dropY + 5 + 2 * (subBtnHeight + subSpacing), subBtnWidth - 10, subBtnHeight };
+        auto manualBtn = DrawButton(manualRect, "Manual", [this]() { showManualInputDialog = true; showInitializeMenu = false; }, baseFontSize);
+        manualBtn->update();
+        manualBtn->draw();
+    }
+    if (showManualInputDialog) {
+        float dialogX = initButtonRect.x + initButtonRect.width + 10, dialogY = initButtonRect.y;
+        Rectangle manualDialogRect = { dialogX, dialogY, 150, 40 };
+        int manualValue = GetValDialogBox("Enter Value:", manualInputText, manualInputActive, manualDialogRect);
+        if (manualValue != -1) { DrawNode(manualValue); showManualInputDialog = false; }
+        DrawRectangleLinesEx(manualDialogRect, 2, BLACK);
+    }
+    if (showSearchDialog) {
+        Rectangle searchDialogRect = { searchButtonRect.x + searchButtonRect.width + 5, searchButtonRect.y, 150, 40 };
+        int searchVal = GetValDialogBox("Search value:", searchInputText, searchInputActive, searchDialogRect);
+        if (searchVal != -1) { SearchNodeValue(searchVal); showSearchDialog = false; }
+        DrawRectangleLinesEx(searchDialogRect, 2, BLACK);
+    }
+    if (showDeleteDialog) {
+        Rectangle deleteDialogRect = { deleteButtonRect.x + deleteButtonRect.width + 5, deleteButtonRect.y, 150, 40 };
+        int delVal = GetValDialogBox("Delete value:", deleteInputText, deleteInputActive, deleteDialogRect);
+        if (delVal != -1) { DeleteNode(delVal); showDeleteDialog = false; }
+        DrawRectangleLinesEx(deleteDialogRect, 2, BLACK);
+    }
     drawComponents();
 }
+
+
+
 void LinkedList::clean() {
     buttons.clear();
     cleanComponents();
